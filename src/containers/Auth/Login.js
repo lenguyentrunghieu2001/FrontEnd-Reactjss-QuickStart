@@ -5,6 +5,7 @@ import * as actions from "../../store/actions";
 import "./Login.scss";
 import { FormattedMessage } from "react-intl";
 import { handleLogin } from "../../services/userService";
+
 class Login extends Component {
   constructor(props) {
     super(props);
@@ -12,6 +13,7 @@ class Login extends Component {
     this.state = {
       username: "",
       password: "",
+      errorMessage: "",
       isShowPassword: false,
     };
   }
@@ -26,9 +28,31 @@ class Login extends Component {
       password: password.target.value,
     });
   };
-
   handleLogin = async () => {
-    await handleLogin(this.state.username, this.state.password);
+    this.setState({
+      errorMessage: "",
+    });
+    try {
+      let data = await handleLogin(this.state.username, this.state.password);
+      if (data && data.errCode !== 0) {
+        this.setState({
+          errorMessage: data.message,
+        });
+      }
+      if (data && data.errCode === 0) {
+        this.props.userLoginSuccess(data.data);
+        console.log("login success");
+      }
+    } catch (error) {
+      if (error.response) {
+        if (error.response.data) {
+          this.setState({
+            errorMessage: error.response.data.message,
+          });
+        }
+      }
+      console.log(error.response);
+    }
   };
 
   handleShowHidePassword = () => {
@@ -75,6 +99,9 @@ class Login extends Component {
                 </span>
               </div>
             </div>
+            <div className="col-12" style={{ color: "red" }}>
+              {this.state.errorMessage}
+            </div>
             <div className="col-12">
               <button
                 className="btn btn-login"
@@ -115,9 +142,9 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
   return {
     navigate: (path) => dispatch(push(path)),
-    adminLoginSuccess: (adminInfo) =>
-      dispatch(actions.adminLoginSuccess(adminInfo)),
-    adminLoginFail: () => dispatch(actions.adminLoginFail()),
+    // userLoginFail: () => dispatch(actions.adminLoginFail()),
+    userLoginSuccess: (userInfo) =>
+      dispatch(actions.userLoginSuccess(userInfo)),
   };
 };
 
